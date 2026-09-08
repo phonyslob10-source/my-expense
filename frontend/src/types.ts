@@ -1,5 +1,5 @@
 export type TxType = 'expense' | 'income'
-export type CategoryType = 'expense_category1' | 'income_category'
+export type CategoryType = 'expense_category1' | 'income_category' | 'expense_category2'
 
 export interface Transaction {
   id: string
