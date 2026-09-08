@@ -61,6 +61,8 @@ DEFAULT_CATEGORIES = [
     ("income_category", "报销", 40),
     ("income_category", "红包", 50),
     ("income_category", "其他收入", 60),
+    ("expense_category2", "FOR Jerry", 10),
+    ("expense_category2", "FOR Flora", 20),
 ]
 
 DEFAULT_MEMBERS = [("Jerry", 10), ("Flora", 20)]
@@ -77,17 +79,22 @@ def init_db() -> None:
                     "INSERT INTO categories(id,type,name,sort_order,is_active,updated_at) VALUES (lower(hex(randomblob(16))),?,?,?,?,?)",
                     (ctype, name, order_no, 1, now),
                 )
-        member_count = conn.execute("SELECT COUNT(*) FROM members").fetchone()[0]
+        else:
+            for ctype, name, order_no in DEFAULT_CATEGORIES:
+                conn.execute(
+                    "INSERT OR IGNORE INTO categories(id,type,name,sort_order,is_active,updated_at) VALUES (lower(hex(randomblob(16))),?,?,?,?,?)",
+                    (ctype, name, order_no, 1, now),
+                )
+        member_count = conn.execute("SELECT COUNT(*) FROM members WHERE is_active=1").fetchone()[0]
         if member_count == 0:
             for name, order_no in DEFAULT_MEMBERS:
                 conn.execute(
                     "INSERT INTO members(id,name,sort_order,is_active,updated_at) VALUES (lower(hex(randomblob(16))),?,?,?,?)",
                     (name, order_no, 1, now),
                 )
-        # Migrate legacy combined/beneficiary entries out of active selectors while preserving old transactions.
         conn.execute("UPDATE members SET is_active=0, updated_at=? WHERE name IN ('Flora & Jerry','Flora&Jerry') AND is_active=1", (now,))
         conn.execute("UPDATE categories SET is_active=0, updated_at=? WHERE type='beneficiary_category2' AND is_active=1", (now,))
-        conn.execute("INSERT OR IGNORE INTO app_meta(key,value) VALUES('schema_version','2')")
+        conn.execute("INSERT OR REPLACE INTO app_meta(key,value) VALUES('schema_version','3')")
         conn.commit()
 
 
