@@ -4,7 +4,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 TxType = Literal["expense", "income"]
-CategoryType = Literal["expense_category1", "income_category"]
+CategoryType = Literal["expense_category1", "income_category", "expense_category2"]
 
 class TransactionIn(BaseModel):
     id: Optional[str] = None
