@@ -12,6 +12,12 @@ export function deviceId() {
 }
 export function adminToken() { return localStorage.getItem(ADMIN_KEY) }
 export function setAdminToken(token: string) { localStorage.setItem(ADMIN_KEY, token) }
+export function clearAdminToken() { localStorage.removeItem(ADMIN_KEY) }
+
+function adminExpiredMessage() {
+  clearAdminToken()
+  return '管理员登录已失效，请重新进入管理员模式'
+}
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
@@ -19,7 +25,12 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   headers.set('X-Device-ID', deviceId())
   const token = adminToken(); if (token) headers.set('Authorization', `Bearer ${token}`)
   const res = await fetch(`${API}${path}`, { ...init, headers })
-  if (!res.ok) { let detail=`HTTP ${res.status}`; try { detail=(await res.json()).detail ?? detail } catch {} ; throw new Error(detail) }
+  if (!res.ok) {
+    let detail=`HTTP ${res.status}`
+    try { detail=(await res.json()).detail ?? detail } catch {}
+    if (res.status === 401 && token) detail = adminExpiredMessage()
+    throw new Error(detail)
+  }
   return res.json()
 }
 
@@ -39,14 +50,25 @@ export async function deleteMember(id:string) { return request<{ok:boolean}>(`/m
 export async function syncTransactions(changes:Transaction[]) { return request<{server_time:string,accepted:Transaction[],transactions:Transaction[],categories:Category[],members:Member[]}>('/sync',{method:'POST',body:JSON.stringify({device_id:deviceId(),changes})}) }
 
 export async function exportCsv() {
-  const headers=new Headers({'X-Device-ID':deviceId()}); const token=adminToken(); if(token) headers.set('Authorization',`Bearer ${token}`)
-  const res=await fetch(`${API}/export/csv`,{headers}); if(!res.ok) throw new Error(`导出失败 HTTP ${res.status}`)
+  const token=adminToken()
+  const headers=new Headers({'X-Device-ID':deviceId()}); if(token) headers.set('Authorization',`Bearer ${token}`)
+  const res=await fetch(`${API}/export/csv`,{headers})
+  if(!res.ok){
+    if(res.status===401&&token) throw new Error(adminExpiredMessage())
+    throw new Error(`导出失败 HTTP ${res.status}`)
+  }
   return res.blob()
 }
 
 export async function importCsv(text:string) {
-  const headers=new Headers({'Content-Type':'text/csv','X-Device-ID':deviceId()}); const token=adminToken(); if(token) headers.set('Authorization',`Bearer ${token}`)
+  const token=adminToken()
+  const headers=new Headers({'Content-Type':'text/csv','X-Device-ID':deviceId()}); if(token) headers.set('Authorization',`Bearer ${token}`)
   const res=await fetch(`${API}/import/csv`,{method:'POST',headers,body:text})
-  if(!res.ok){let detail=`HTTP ${res.status}`;try{detail=(await res.json()).detail??detail}catch{};throw new Error(detail)}
+  if(!res.ok){
+    let detail=`HTTP ${res.status}`
+    try{detail=(await res.json()).detail??detail}catch{}
+    if(res.status===401&&token) detail=adminExpiredMessage()
+    throw new Error(detail)
+  }
   return res.json() as Promise<{imported:number,errors:string[]}>
 }
