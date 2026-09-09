@@ -40,6 +40,24 @@ function enhancePeriodControls(root: ParentNode) {
   })
 }
 
+function compactMoneyLabel(text: string) {
+  const match = text.trim().match(/^¥\s*([\d,]+(?:\.\d+)?)$/)
+  if (!match) return text
+  const value = Number(match[1].replace(/,/g, ''))
+  if (!Number.isFinite(value)) return text
+  if (value >= 100000000) return `¥${(value / 100000000).toFixed(1).replace(/\.0$/, '')}亿`
+  if (value >= 10000) return `¥${(value / 10000).toFixed(1).replace(/\.0$/, '')}万`
+  return text
+}
+
+function compactLargePieLabels(root: ParentNode) {
+  root.querySelectorAll<SVGTextElement>('.pie-wrap svg text').forEach(label => {
+    const original = label.textContent || ''
+    const compact = compactMoneyLabel(original)
+    if (compact !== original) label.textContent = compact
+  })
+}
+
 function hideSmallPieLabels(root: ParentNode) {
   root.querySelectorAll<HTMLElement>('.pie-wrap').forEach(wrap => {
     const legend = wrap.parentElement?.querySelector('.pie-legend')
@@ -57,11 +75,13 @@ function hideSmallPieLabels(root: ParentNode) {
 
 const observer = new MutationObserver(() => {
   enhancePeriodControls(document)
+  compactLargePieLabels(document)
   hideSmallPieLabels(document)
 })
 observer.observe(document.body, { childList: true, subtree: true })
 
 requestAnimationFrame(() => {
   enhancePeriodControls(document)
+  compactLargePieLabels(document)
   hideSmallPieLabels(document)
 })
