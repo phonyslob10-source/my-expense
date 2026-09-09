@@ -1,0 +1,5 @@
+.pie-wrap{max-width:100% !important;padding:0 28px;overflow:visible !important}
+.pie-wrap .recharts-responsive-container,.pie-wrap .recharts-wrapper{overflow:visible !important}
+.pie-wrap .recharts-surface,.pie-wrap svg{overflow:visible !important}
+.pie-wrap .recharts-text{font-size:11px}
+@media(max-width:520px){.pie-wrap{padding:0 24px}.pie-wrap .recharts-text{font-size:10px}}
