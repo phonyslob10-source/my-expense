@@ -1,6 +1,6 @@
 # Android app
 
-This directory contains a small native Android WebView wrapper for the existing `my-expense` web app.
+This directory contains a small native Android WebView wrapper for the existing `my-expense` web app.\n\nThe wrapper is also compatible with the planned Cloudflare deployment: once the public HTTPS endpoint is available, `START_URL` can point to that URL and the APK remains the same WebView architecture.
 
 ## What it does
 
