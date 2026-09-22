@@ -1,0 +1,14 @@
+[project]
+name = "my-expense-cloudflare"
+version = "1.0.0"
+description = "Cloudflare Worker backend for 我的记账"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.116,<0.119",
+]
+
+[dependency-groups]
+dev = [
+    "workers-py",
+    "workers-runtime-sdk",
+]
