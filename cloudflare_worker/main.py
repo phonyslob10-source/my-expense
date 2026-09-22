@@ -10,7 +10,7 @@ import mimetypes
 import re
 import time
 import uuid
-from datetime import date as Date, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 from urllib.parse import quote
 
@@ -146,7 +146,7 @@ def row_member(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def utc_now() -> str:
-    return datetime.now().astimezone().astimezone().isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def token_signing_secret(request: Request) -> str:
