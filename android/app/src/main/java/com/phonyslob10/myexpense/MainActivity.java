@@ -16,7 +16,7 @@ import android.widget.TextView;
 
 public class MainActivity extends Activity {
     private static final String TAG = "MyExpenseWebView";
-    private static final String START_URL = "http://100.109.86.108:3000";
+    private static final String START_URL = BuildConfig.SERVER_URL;
     private WebView webView;
     private TextView errorView;
 
