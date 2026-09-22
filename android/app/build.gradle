@@ -12,8 +12,12 @@ android {
         targetSdk 36
         versionCode 1
         versionName '1.0.0'
-        // Change only this value when the backend moves to Cloudflare.
-        buildConfigField 'String', 'SERVER_URL', '"http://100.109.86.108:3000"'
+        // The release workflow supplies the deployed Cloudflare HTTPS URL with
+        // -PserverUrl. An invalid fallback prevents new APKs from silently
+        // retaining the retired Tailscale-only endpoint.
+        def configuredServerUrl = providers.gradleProperty('serverUrl')
+            .getOrElse('https://my-expense.invalid')
+        buildConfigField 'String', 'SERVER_URL', '"' + configuredServerUrl + '"'
     }
 
     buildTypes {

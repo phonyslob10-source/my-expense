@@ -2,6 +2,11 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      server_url:
+        description: 'Deployed Cloudflare HTTPS URL'
+        required: true
+        type: string
   push:
     paths:
       - 'android/**'
@@ -30,7 +35,7 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: gradle assembleDebug --no-daemon
+        run: gradle assembleDebug --no-daemon -PserverUrl="${{ inputs.server_url }}"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
