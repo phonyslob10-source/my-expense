@@ -12,6 +12,30 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (function () {
+        function showStartupError(message) {
+          var root = document.getElementById('root')
+          if (!root || root.childElementCount) return
+          root.innerHTML = '<div style="padding:32px 20px;font:16px/1.6 sans-serif;color:#1f2937">'
+            + '<h2 style="margin:0 0 12px">记账页面启动失败</h2>'
+            + '<p data-startup-error style="margin:0 0 12px"></p>'
+            + '<p style="color:#6b7280">请更新 Android System WebView 和 Chrome 后重试。</p>'
+            + '</div>'
+          root.querySelector('[data-startup-error]').textContent = String(message || '前端脚本无法运行')
+        }
+        window.addEventListener('error', function (event) {
+          showStartupError(event.message)
+        })
+        window.addEventListener('unhandledrejection', function (event) {
+          var reason = event.reason
+          showStartupError(reason && reason.message ? reason.message : reason)
+        })
+        window.setTimeout(function () {
+          showStartupError('页面长时间没有完成加载')
+        }, 8000)
+      })()
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -9,6 +9,7 @@ import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -17,6 +18,7 @@ import android.widget.TextView;
 public class MainActivity extends Activity {
     private static final String TAG = "MyExpenseWebView";
     private static final String START_URL = BuildConfig.SERVER_URL;
+    private static final String WEB_CACHE_VERSION = "es2017-20260922";
     private WebView webView;
     private TextView errorView;
 
@@ -27,6 +29,15 @@ public class MainActivity extends Activity {
 
         webView = new WebView(this);
         setContentView(webView);
+
+        String cachedVersion = getSharedPreferences("webview", MODE_PRIVATE)
+                .getString("cache_version", "");
+        if (!WEB_CACHE_VERSION.equals(cachedVersion)) {
+            webView.clearCache(true);
+            getSharedPreferences("webview", MODE_PRIVATE).edit()
+                    .putString("cache_version", WEB_CACHE_VERSION)
+                    .apply();
+        }
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -52,6 +63,18 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 Log.d(TAG, "Page finished: " + url);
+                view.postDelayed(() -> checkFrontendRendered(view, url), 1500);
+            }
+
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest request,
+                                            WebResourceResponse errorResponse) {
+                super.onReceivedHttpError(view, request, errorResponse);
+                if (request.isForMainFrame()) {
+                    int status = errorResponse != null ? errorResponse.getStatusCode() : 0;
+                    String url = request.getUrl() != null ? request.getUrl().toString() : START_URL;
+                    showError(status, "服务器返回 HTTP " + status, url);
+                }
             }
 
             @Override
@@ -80,11 +103,34 @@ public class MainActivity extends Activity {
             public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
                 Log.d(TAG, "JS console: " + consoleMessage.message() + " @ "
                         + consoleMessage.sourceId() + ":" + consoleMessage.lineNumber());
+                if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+                    String message = consoleMessage.message();
+                    String source = consoleMessage.sourceId();
+                    webView.evaluateJavascript(
+                            "!document.getElementById('root') || document.getElementById('root').childElementCount === 0",
+                            empty -> {
+                                if ("true".equals(empty)) {
+                                    showError(0, "JavaScript 错误：" + message, source);
+                                }
+                            });
+                }
                 return true;
             }
         });
 
         webView.loadUrl(START_URL);
+    }
+
+    private void checkFrontendRendered(WebView view, String url) {
+        view.evaluateJavascript(
+                "document.getElementById('root') && document.getElementById('root').childElementCount > 0",
+                rendered -> {
+                    if (!"true".equals(rendered)) {
+                        showError(0,
+                                "前端脚本未能启动。请更新 Android System WebView 和 Chrome 后重试。",
+                                url);
+                    }
+                });
     }
 
     private void showError(int code, String description, String url) {

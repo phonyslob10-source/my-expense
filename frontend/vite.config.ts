@@ -3,6 +3,11 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  build: {
+    // The Android wrapper supports Android 8+, whose System WebView may be
+    // considerably older than Vite's default browser target.
+    target: 'es2017',
+  },
   plugins: [
     react(),
     VitePWA({
