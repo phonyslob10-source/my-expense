@@ -547,7 +547,14 @@ def parse_amount(value: str) -> int:
 
 def parse_import_date(value: str) -> Optional[str]:
     value = (value or "").strip()
-    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%Y.%m.%d", "%Y-%m-%d %H:%M:%S"):
+    # Notion's Chinese CSV export uses a Chinese year/month/day date.
+    for fmt in (
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+        "%Y.%m.%d",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y" + chr(0x5E74) + "%m" + chr(0x6708) + "%d" + chr(0x65E5),
+    ):
         try:
             return datetime.strptime(value, fmt).date().isoformat()
         except ValueError:
