@@ -35,7 +35,7 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: gradle assembleDebug --no-daemon -PserverUrl="${{ inputs.server_url }}"
+        run: gradle assembleDebug --no-daemon -PserverUrl="${{ inputs.server_url || 'https://my-expense.phonyslob10.workers.dev' }}"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

@@ -6,6 +6,10 @@ android {
     namespace 'com.phonyslob10.myexpense'
     compileSdk 36
 
+    buildFeatures {
+        buildConfig true
+    }
+
     defaultConfig {
         applicationId 'com.phonyslob10.myexpense'
         minSdk 26
