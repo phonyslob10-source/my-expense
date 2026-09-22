@@ -43,3 +43,10 @@ For access from other Wi-Fi networks or mobile data, use Tailscale Serve. Tailsc
 5. Open that HTTPS URL on the iPhone and add it to the Home Screen again.
 
 Do not use Tailscale Funnel for this application: Funnel makes the service public on the internet.
+
+
+## Cloudflare
+
+The project now includes a Cloudflare Workers + D1 deployment path. The React/Vite/PWA frontend is served by Workers Static Assets, while the FastAPI backend runs as a Python Worker and stores server data in D1. Historical local SQLite data is intentionally not migrated.
+
+See [CLOUDFLARE.md](CLOUDFLARE.md) for setup and deployment steps.
