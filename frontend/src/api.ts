@@ -72,3 +72,14 @@ export async function importCsv(text:string) {
   }
   return res.json() as Promise<{imported:number,errors:string[]}>
 }
+
+export async function exportBackup() {
+  const token=adminToken()
+  const headers=new Headers({'X-Device-ID':deviceId()}); if(token) headers.set('Authorization',`Bearer ${token}`)
+  const res=await fetch(`${API}/backup`,{headers})
+  if(!res.ok){
+    if(res.status===401&&token) throw new Error(adminExpiredMessage())
+    throw new Error(`备份失败 HTTP ${res.status}`)
+  }
+  return res.blob()
+}
