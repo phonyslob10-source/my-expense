@@ -2,7 +2,7 @@
 name = "my-expense-cloudflare"
 version = "1.0.0"
 description = "Cloudflare Worker backend for 我的记账"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.116,<0.119",
 ]

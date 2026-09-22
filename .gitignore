@@ -7,3 +7,5 @@ data/*.db
 .env
 .wrangler/
 .venv-workers/
+python_modules/
+pylock.toml

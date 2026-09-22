@@ -17,7 +17,7 @@
     {
       "binding": "DB",
       "database_name": "my-expense-db",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+      "database_id": "ebb8cc76-1564-49fa-9eb0-9b0ca075652d"
     }
   ]
 }
