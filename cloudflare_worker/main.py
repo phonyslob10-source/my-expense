@@ -150,7 +150,10 @@ def utc_now() -> str:
 
 
 def token_signing_secret(request: Request) -> str:
-    return setting(request, "ADMIN_TOKEN_SECRET", "CHANGE_ME_BEFORE_DEPLOYMENT")
+    secret = setting(request, "ADMIN_TOKEN_SECRET")
+    if not secret:
+        raise HTTPException(503, "管理员 Token 密钥尚未配置")
+    return secret
 
 
 def make_admin_token(request: Request) -> str:
@@ -177,7 +180,10 @@ def verify_admin(request: Request, authorization: Optional[str] = None) -> str:
         timestamp_text.encode(),
         hashlib.sha256,
     ).digest()
-    actual = base64.urlsafe_b64decode(signature + "=" * (-len(signature) % 4))
+    try:
+        actual = base64.urlsafe_b64decode(signature + "=" * (-len(signature) % 4))
+    except Exception:
+        raise HTTPException(401, "管理员凭证无效")
     if not hmac.compare_digest(actual, expected):
         raise HTTPException(401, "管理员凭证无效")
     return token
