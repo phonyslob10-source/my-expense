@@ -1,21 +1,21 @@
 # Android app
 
-This directory contains a small native Android WebView wrapper for the existing `my-expense` web app.\n\nThe wrapper is also compatible with the planned Cloudflare deployment: once the public HTTPS endpoint is available, `START_URL` can point to that URL and the APK remains the same WebView architecture.
+This directory contains a native Android WebView wrapper for the `my-expense` web app. It loads the deployed HTTPS frontend; it does not bundle frontend assets or a database.
 
 ## What it does
 
-- Opens `http://100.109.86.108:3000` directly in an Android app window.
+- Opens the HTTPS address supplied through the `serverUrl` Gradle property.
 - Uses the Android app name `记账` instead of a browser shortcut.
 - Hides the browser address bar because it is a native WebView.
-- Keeps the existing frontend unchanged, so iPhone and normal browser use are unaffected.
-- Allows HTTP because the service is intentionally reached through the Tailscale network.
+- Shares the deployed frontend, including record deletion and device-local font settings, with iPhone and normal browsers.
+- Preserves WebView DOM storage for offline records and settings.
 
 ## Build
 
 Open this `android` directory in Android Studio, or run:
 
 ```text
-gradle assembleDebug
+gradle assembleDebug -PserverUrl="https://my-expense.phonyslob10.workers.dev"
 ```
 
 The debug APK is produced at:
@@ -28,4 +28,4 @@ A GitHub Actions workflow also builds the APK automatically when files under `an
 
 ## Changing the server address
 
-Edit `app/src/main/java/com/phonyslob10/myexpense/MainActivity.java` and change `START_URL` if the Tailscale IP or port changes.
+Supply `-PserverUrl="https://your-deployment.example"` at build time, or use the `server_url` input of the GitHub Actions workflow. The app's `BuildConfig.SERVER_URL` uses that value. Frontend changes require a separate web deployment; building an APK does not deploy a Worker or run database migrations.

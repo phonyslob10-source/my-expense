@@ -50,3 +50,14 @@ Do not use Tailscale Funnel for this application: Funnel makes the service publi
 The project now includes a Cloudflare Workers + D1 deployment path. The React/Vite/PWA frontend is served by Workers Static Assets, while the FastAPI backend runs as a Python Worker and stores server data in D1. Historical local SQLite data is intentionally not migrated.
 
 See [CLOUDFLARE.md](CLOUDFLARE.md) for setup and deployment steps.
+
+## 单条删除与字体设置
+
+- 在首页点开一笔记录，进入“编辑记录”后可点击“删除这笔记录”；账单列表也保留逐笔删除按钮。确认框会显示项目、日期、账户及金额，取消不会删除。
+- 删除沿用软删除标记，可离线操作；联网后进入原有同步流程。记录和待同步队列一起保存，同步途中新增的删除也会保留。
+- “设置 → 字体与显示”提供“小号、适中、原字号”，默认适中（比原字号略小），选择保存在当前设备。正文使用设备系统字体；输入框保留手机友好的字号。
+- 账单项目可以换行，金额和删除按钮不会被挤走；极窄屏幕会把金额放到下一行。
+
+本地验证：`npm --prefix frontend ci`、`npm --prefix frontend test`、`npm --prefix frontend run build`。测试使用虚构记录和内存 IndexedDB，禁止请求线上 API。
+
+Android APK 是加载部署网址的 WebView 外壳，不内置前端页面。新网页功能需要单独发布前端后生效；构建 APK 不会执行数据库迁移或删除记录。
