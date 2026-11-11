@@ -5,6 +5,7 @@ import { applyFontSize, readFontSize, type FontSize } from './fontPreferences'
 import { FontSettings } from './FontSettings'
 import { DeleteTransactionButton } from './DeleteTransactionButton'
 import { filterBills } from './billFilters'
+import { balancesAfterTransactions } from './accountBalances'
 import * as api from './api'
 import type { Category, Member, Transaction, TxType } from './types'
 import { nowIso, monthRange, today, uid, yuan } from './utils'
@@ -44,19 +45,20 @@ export default function App(){
       return true
     }catch(e){setToast(`删除失败：${e instanceof Error?e.message:'请稍后重试'}`);return false}
   }
+  const txBalances=useMemo(()=>balancesAfterTransactions(transactions),[transactions])
   const month=monthRange();const monthTx=useMemo(()=>transactions.filter(t=>t.date>=month.start&&t.date<=month.end),[transactions,month.start,month.end]);const monthExpense=sum(monthTx.filter(t=>t.type==='expense'));const monthIncome=sum(monthTx.filter(t=>t.type==='income'))
   const cat1=categories.filter(c=>c.type==='expense_category1'&&c.is_active);const cat2=categories.filter(c=>c.type==='expense_category2'&&c.is_active);const incomeCats=categories.filter(c=>c.type==='income_category'&&c.is_active)
   return <div className="app-shell"><header className="topbar"><div><strong>我的记账</strong><small>{online?(syncing?'同步中…':'已连接'):'离线模式'}{pendingCount?` · 待同步 ${pendingCount}`:''}</small></div><button className="icon-btn" onClick={sync} disabled={!online||syncing}>↻</button></header><main className="content">
-    {page==='home'&&<HomePage monthExpense={monthExpense} monthIncome={monthIncome} transactions={transactions} members={members} onAdd={()=>{setEditing(null);setPage('add')}} onOpenTx={t=>{setEditing(t);setPage('add')}}/>}
+    {page==='home'&&<HomePage txBalances={txBalances} monthExpense={monthExpense} monthIncome={monthIncome} transactions={transactions} members={members} onAdd={()=>{setEditing(null);setPage('add')}} onOpenTx={t=>{setEditing(t);setPage('add')}}/>}
     {page==='add'&&<AddPage editing={editing} members={members} cat1={cat1} cat2={cat2} incomeCats={incomeCats} onCancel={()=>{setEditing(null);setPage('home')}} onSubmit={submitTx} onDelete={doDelete}/>}
-    {page==='list'&&<ListPage transactions={transactions} onEdit={t=>{setEditing(t);setPage('add')}} onDelete={doDelete} members={members} categories={categories}/>}
+    {page==='list'&&<ListPage txBalances={txBalances} transactions={transactions} onEdit={t=>{setEditing(t);setPage('add')}} onDelete={doDelete} members={members} categories={categories}/>}
     {page==='stats'&&<StatsPage transactions={transactions} members={members}/>} 
     {page==='settings'&&<SettingsPage categories={categories} members={members} adminMode={adminMode} setAdminMode={setAdminMode} onSync={sync} onToast={setToast} fontSize={fontSize} onFontSizeChange={setFontSize}/>}
   </main><nav className="tabbar"><Tab active={page==='home'} label="首页" icon="⌂" onClick={()=>setPage('home')}/><Tab active={page==='list'} label="账单" icon="▤" onClick={()=>setPage('list')}/><button className="fab" onClick={()=>{setEditing(null);setPage('add')}}>＋<span>记一笔</span></button><Tab active={page==='stats'} label="统计" icon="◒" onClick={()=>setPage('stats')}/><Tab active={page==='settings'} label="设置" icon="⚙" onClick={()=>setPage('settings')}/></nav>{toast&&<div className="toast">{toast}</div>}</div>
 }
 function Tab({active,label,icon,onClick}:{active:boolean,label:string,icon:string,onClick:()=>void}){return <button className={`tab ${active?'active':''}`} onClick={onClick}><span>{icon}</span><small>{label}</small></button>}
 
-function HomePage({monthExpense,monthIncome,transactions,members,onAdd,onOpenTx}:{monthExpense:number,monthIncome:number,transactions:Transaction[],members:Member[],onAdd:()=>void,onOpenTx:(t:Transaction)=>void}){const accounts=members.filter(m=>m.is_active);return <><section className="hero-card"><div className="eyebrow">本月</div><div className="hero-number expense">{yuan(monthExpense)}</div><div className="hero-sub"><span className="income">收入 {yuan(monthIncome)}</span> · <span className="balance">结余 {yuan(monthIncome-monthExpense)}</span></div></section><section className="account-grid">{accounts.map(a=>{const e=sum(transactions.filter(t=>t.member===a.name&&t.type==='expense'&&t.date>=monthRange().start&&t.date<=monthRange().end));const i=sum(transactions.filter(t=>t.member===a.name&&t.type==='income'&&t.date>=monthRange().start&&t.date<=monthRange().end));const te=sum(transactions.filter(t=>t.member===a.name&&t.type==='expense'));const ti=sum(transactions.filter(t=>t.member===a.name&&t.type==='income'));const b=ti-te;return <div className="account-card" key={a.id}><div className="account-name">{a.name}</div><div><small>余额</small><strong className="balance">{b>=0?'+':'-'}{yuan(Math.abs(b))}</strong></div><div><small>本月支出</small><strong className="expense">-{yuan(e)}</strong></div><div><small>本月收入</small><strong className="income">+{yuan(i)}</strong></div></div>})}</section><button className="primary wide" onClick={onAdd}>＋ 记一笔</button><section className="panel"><div className="panel-title">最近 5 笔</div>{transactions.slice(0,5).map(t=><TxRow key={t.id} tx={t} onClick={()=>onOpenTx(t)}/>)}{!transactions.length&&<div className="empty">还没有记录，先记第一笔。</div>}</section></>}
+function HomePage({txBalances,monthExpense,monthIncome,transactions,members,onAdd,onOpenTx}:{txBalances:Map<string,number>,monthExpense:number,monthIncome:number,transactions:Transaction[],members:Member[],onAdd:()=>void,onOpenTx:(t:Transaction)=>void}){const accounts=members.filter(m=>m.is_active);return <><section className="hero-card"><div className="eyebrow">本月</div><div className="hero-number expense">{yuan(monthExpense)}</div><div className="hero-sub"><span className="income">收入 {yuan(monthIncome)}</span> · <span className="balance">结余 {yuan(monthIncome-monthExpense)}</span></div></section><section className="account-grid">{accounts.map(a=>{const e=sum(transactions.filter(t=>t.member===a.name&&t.type==='expense'&&t.date>=monthRange().start&&t.date<=monthRange().end));const i=sum(transactions.filter(t=>t.member===a.name&&t.type==='income'&&t.date>=monthRange().start&&t.date<=monthRange().end));const te=sum(transactions.filter(t=>t.member===a.name&&t.type==='expense'));const ti=sum(transactions.filter(t=>t.member===a.name&&t.type==='income'));const b=ti-te;return <div className="account-card" key={a.id}><div className="account-name">{a.name}</div><div><small>余额</small><strong className="balance">{b>=0?'+':'-'}{yuan(Math.abs(b))}</strong></div><div><small>本月支出</small><strong className="expense">-{yuan(e)}</strong></div><div><small>本月收入</small><strong className="income">+{yuan(i)}</strong></div></div>})}</section><button className="primary wide" onClick={onAdd}>＋ 记一笔</button><section className="panel"><div className="panel-title">最近 5 笔</div>{transactions.slice(0,5).map(t=><TxRow key={t.id} tx={t} balanceAfter={txBalances.get(t.id)!} onClick={()=>onOpenTx(t)}/>)}{!transactions.length&&<div className="empty">还没有记录，先记第一笔。</div>}</section></>}
 
 function AddPage({editing,members,cat1,cat2,incomeCats,onCancel,onSubmit,onDelete}:{
   editing:Transaction|null,members:Member[],cat1:Category[],cat2:Category[],incomeCats:Category[],
@@ -99,8 +101,8 @@ function AddPage({editing,members,cat1,cat2,incomeCats,onCancel,onSubmit,onDelet
   </>
 }
 
-function TxRow({tx,onClick}:{tx:Transaction,onClick?:()=>void}){return <button className="tx-row" onClick={onClick}><div><strong>{tx.project}</strong><small>{tx.date} · {tx.member}{tx.category1?` · ${tx.category1}`:''}{tx.category2?` · ${tx.category2}`:''}</small></div><strong className={tx.type==='expense'?'expense':'income'}>{tx.type==='expense'?'-':'+'}{yuan(tx.amount_cents)}</strong></button>}
-function ListPage({transactions,onEdit,onDelete,members,categories}:{transactions:Transaction[],onEdit:(t:Transaction)=>void,onDelete:(t:Transaction)=>Promise<boolean>,members:Member[],categories:Category[]}) {
+function TxRow({tx,balanceAfter,onClick}:{tx:Transaction,balanceAfter:number,onClick?:()=>void}){return <button className="tx-row" onClick={onClick}><div><strong>{tx.project}</strong><small>{tx.date} · {tx.member}{tx.category1?` · ${tx.category1}`:''}{tx.category2?` · ${tx.category2}`:''}</small><small className="tx-balance">本笔后余额 {yuan(balanceAfter)}</small></div><strong className={tx.type==='expense'?'expense':'income'}>{tx.type==='expense'?'-':'+'}{yuan(tx.amount_cents)}</strong></button>}
+function ListPage({txBalances,transactions,onEdit,onDelete,members,categories}:{txBalances:Map<string,number>,transactions:Transaction[],onEdit:(t:Transaction)=>void,onDelete:(t:Transaction)=>Promise<boolean>,members:Member[],categories:Category[]}) {
   const [q,setQ]=useState('')
   const [type,setType]=useState('')
   const [member,setMember]=useState('')
@@ -122,7 +124,7 @@ function ListPage({transactions,onEdit,onDelete,members,categories}:{transaction
       <select aria-label="分类2筛选" value={category2} onChange={e=>setCategory2(e.target.value)}><option value="">全部分类2</option>{categoryOptions('category2').map(name=><option key={name} value={name}>{name}</option>)}</select>
       <select aria-label="账单排序" value={sort} onChange={e=>{setSort(e.target.value);if(e.target.value==='expense-desc')setType('expense')}}><option value="date">日期从新到旧</option><option value="expense-desc">支出金额从大到小</option></select>
     </div>
-    <section className="panel">{filtered.map(t=><div key={t.id} className="tx-wrap"><TxRow tx={t} onClick={()=>onEdit(t)}/><DeleteTransactionButton tx={t} onDelete={onDelete}/></div>)}{!filtered.length&&<div className="empty">没有匹配记录。</div>}</section>
+    <section className="panel">{filtered.map(t=><div key={t.id} className="tx-wrap"><TxRow tx={t} balanceAfter={txBalances.get(t.id)!} onClick={()=>onEdit(t)}/><DeleteTransactionButton tx={t} onDelete={onDelete}/></div>)}{!filtered.length&&<div className="empty">没有匹配记录。</div>}</section>
   </>
 }
 

@@ -29,3 +29,5 @@ button:disabled{opacity:.55;cursor:wait}
 /* Retain Safari's focus-safe control size; surrounding labels and bills scale. */
 input,select,textarea,.form input,.form select,.form textarea,.date-range input,.chart-head select,.settings-password{font-size:max(16px,calc(16px * var(--font-scale)))}
 @media(max-width:360px){.tx-wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px}.tx-row{display:grid;grid-template-columns:minmax(0,1fr);gap:5px}.tx-row>strong{justify-self:start}.tx-wrap>.delete-link{align-self:center}.content{padding-left:10px;padding-right:10px}.bill-filters{gap:6px}.bill-filters select{padding-left:7px;padding-right:7px}}
+
+.tx-row .tx-balance{margin-top:5px;color:#4b5563;font-variant-numeric:tabular-nums}

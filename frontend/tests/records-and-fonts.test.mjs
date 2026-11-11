@@ -128,3 +128,21 @@ test('unknown or unavailable font preferences fall back to the compact default',
   try { assert.equal(readFontSize(), 'medium') }
   finally { Object.getPrototypeOf(localStorage).getItem = getItem }
 })
+
+test('home and filtered bills show each account balance after that transaction', async () => {
+  const income={...originalTx,id:'balance-income',project:'测试入账',type:'income',amount_cents:100000,created_at:'2026-10-14T00:00:00Z',date:'2026-10-14'}
+  const expense={...originalTx,id:'balance-expense',project:'测试支出',amount_cents:10000,created_at:'2026-10-15T01:00:00Z'}
+  const later={...expense,id:'balance-later',project:'后续支出',amount_cents:20000,created_at:'2026-10-15T02:00:00Z'}
+  await db.transactions.clear()
+  await db.transactions.bulkPut([income,expense,later])
+  render(React.createElement(App))
+  const row=await screen.findByRole('button',{name:/^测试支出/})
+  assert.match(row.textContent,/本笔后余额 ¥900\.00/)
+  assert.match(screen.getByRole('button',{name:/^后续支出/}).textContent,/本笔后余额 ¥700\.00/)
+  fireEvent.click(screen.getByRole('button',{name:/账单/}))
+  fireEvent.change(screen.getByRole('combobox',{name:'账单排序'}),{target:{value:'expense-desc'}})
+  assert.match(screen.getByRole('button',{name:/^测试支出/}).textContent,/本笔后余额 ¥900\.00/)
+  fireEvent.change(screen.getByRole('textbox',{name:'搜索项目、备注'}),{target:{value:'测试支出'}})
+  assert.match(screen.getByRole('button',{name:/^测试支出/}).textContent,/本笔后余额 ¥900\.00/)
+  assert.equal(screen.queryByRole('button',{name:/^后续支出/}),null)
+})
